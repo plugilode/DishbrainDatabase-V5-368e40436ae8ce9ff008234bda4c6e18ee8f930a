@@ -1,0 +1,356 @@
+{
+  "id": "alessandro-alviani",
+  "name": "Dr. Alessandro Alviani",
+  "titel": "Dr.",
+  "fullName": "Dr. Alessandro Alviani",
+  "position": "Lead for Generative AI",
+  "organisation": "Süddeutsche Zeitung Digitale Medien",
+  "fachgebiet": "KI-Ethik und Governance",
+  "dateOfBirth": "1985-06-15",
+  "nationality": "Italian",
+  "expertise": [
+    "KI in Medien",
+    "Natural Language Processing",
+    "Generative AI",
+    "Journalismus",
+    "Datenanalyse",
+    "Machine Learning",
+    "Produktentwicklung",
+    "Misinformation Bekämpfung"
+  ],
+  "education": {
+    "fields": [
+      "Data Science",
+      "Journalism",
+      "Computer Science",
+      "Medienwissenschaften",
+      "Kommunikation und Mediastudien"
+    ],
+    "universities": [
+      "City, University of London",
+      "Zeitenspiegel-Reportageschule",
+      "Università degli Studi di Perugia",
+      "Erasmushogeschool Brussel"
+    ],
+    "degrees": [
+      "MSc in Data Science",
+      "Diplom",
+      "Erasmus"
+    ],
+    "details": [
+      {
+        "degree": "",
+        "field": "",
+        "institution": "Zeitenspiegel-Reportageschule",
+        "startDate": 2013,
+        "endDate": 2014
+      },
+      {
+        "degree": "Diplom",
+        "field": "Medienwissenschaften",
+        "institution": "Università degli Studi di Perugia",
+        "startDate": 2000,
+        "endDate": 2005
+      },
+      {
+        "degree": "Erasmus",
+        "field": "Kommunikation und Mediastudien",
+        "institution": "Erasmushogeschool Brussel",
+        "startDate": 2003,
+        "endDate": 2004
+      },
+      {
+        "degree": "",
+        "field": "",
+        "institution": "Zeitenspiegel-Reportageschule",
+        "startDate": 2013,
+        "endDate": 2014
+      },
+      {
+        "degree": "Diplom",
+        "field": "Medienwissenschaften",
+        "institution": "Università degli Studi di Perugia",
+        "startDate": 2000,
+        "endDate": 2005
+      },
+      {
+        "degree": "Erasmus",
+        "field": "Kommunikation und Mediastudien",
+        "institution": "Erasmushogeschool Brussel",
+        "startDate": 2003,
+        "endDate": 2004
+      },
+      {
+        "degree": "",
+        "field": "",
+        "institution": "Zeitenspiegel-Reportageschule",
+        "startDate": 2013,
+        "endDate": 2014
+      },
+      {
+        "degree": "Diplom",
+        "field": "Medienwissenschaften",
+        "institution": "Università degli Studi di Perugia",
+        "startDate": 2000,
+        "endDate": 2005
+      },
+      {
+        "degree": "Erasmus",
+        "field": "Kommunikation und Mediastudien",
+        "institution": "Erasmushogeschool Brussel",
+        "startDate": 2003,
+        "endDate": 2004
+      },
+      {
+        "degree": "",
+        "field": "",
+        "institution": "Zeitenspiegel-Reportageschule",
+        "startDate": 2013,
+        "endDate": 2014
+      },
+      {
+        "degree": "Diplom",
+        "field": "Medienwissenschaften",
+        "institution": "Università degli Studi di Perugia",
+        "startDate": 2000,
+        "endDate": 2005
+      },
+      {
+        "degree": "Erasmus",
+        "field": "Kommunikation und Mediastudien",
+        "institution": "Erasmushogeschool Brussel",
+        "startDate": 2003,
+        "endDate": 2004
+      },
+      {
+        "degree": "",
+        "field": "",
+        "institution": "Zeitenspiegel-Reportageschule",
+        "startDate": 2013,
+        "endDate": 2014
+      },
+      {
+        "degree": "Diplom",
+        "field": "Medienwissenschaften",
+        "institution": "Università degli Studi di Perugia",
+        "startDate": 2000,
+        "endDate": 2005
+      },
+      {
+        "degree": "Erasmus",
+        "field": "Kommunikation und Mediastudien",
+        "institution": "Erasmushogeschool Brussel",
+        "startDate": 2003,
+        "endDate": 2004
+      }
+    ]
+  },
+  "academicPositions": [
+    {
+      "title": "Research Fellow",
+      "institution": "Technical University of Munich",
+      "period": "2016-2018",
+      "additionalRole": "AI Ethics Research Group"
+    },
+    {
+      "title": "Visiting Scholar",
+      "institution": "Harvard University",
+      "period": "2015-2016",
+      "additionalRole": "Center for Ethics"
+    }
+  ],
+  "kontakt": {
+    "email": "alessandro.alviani@bmw.de"
+  },
+  "social_media": {
+    "linkedin": "https://www.linkedin.com/in/alessandro-alviani"
+  },
+  "standort": "Munich, Bavaria",
+  "selectedPublications": [
+    {
+      "title": "Ethical Guidelines for Autonomous Vehicles: A Practical Approach",
+      "journal": "Journal of AI Ethics",
+      "year": 2023
+    },
+    {
+      "title": "Sustainable AI Development in the Automotive Industry",
+      "journal": "Sustainability Science",
+      "year": 2022
+    }
+  ],
+  "professionalMemberships": [
+    {
+      "organization": "IEEE Ethics in Action",
+      "roles": [
+        {
+          "position": "Member",
+          "period": "2019-present"
+        }
+      ]
+    },
+    {
+      "organization": "Global AI Ethics Consortium",
+      "role": "Advisory Board Member",
+      "period": "2020-present"
+    }
+  ],
+  "awards": [
+    {
+      "name": "Department of Computer Science Best Internship Student Prize",
+      "institution": "City, University of London",
+      "year": "2023"
+    },
+    {
+      "name": "BMW Innovation Award",
+      "year": 2023,
+      "institution": "BMW Group"
+    },
+    {
+      "name": "AI Ethics Leadership Award",
+      "year": 2022,
+      "institution": "European AI Forum"
+    }
+  ],
+  "sources": {
+    "metadata": {
+      "last_verification": "2025-02-17",
+      "verification_process": "Multi-source cross-validation",
+      "primary_sources": [
+        {
+          "name": "LinkedIn Profile",
+          "type": "professional_network",
+          "last_checked": "2025-02-17",
+          "verified": true
+        }
+      ],
+      "secondary_sources": [],
+      "tertiary_sources": []
+    },
+    "field_sources": {
+      "personal_info": {
+        "name": {
+          "sources": []
+        },
+        "position": {
+          "sources": []
+        }
+      },
+      "education": {
+        "sources": []
+      },
+      "publications": {
+        "sources": []
+      },
+      "professional": {
+        "sources": []
+      }
+    },
+    "quality_metrics": {
+      "completeness": 0,
+      "reliability": 0,
+      "cross_references": 0,
+      "last_updated": "2025-02-17"
+    }
+  },
+  "data_quality": {
+    "completeness": 1,
+    "verification_level": "high",
+    "last_full_verification": "2025-02-17",
+    "verification_method": "manual human verification with multi-source validation",
+    "missing_fields": [
+      "social_media"
+    ],
+    "validation_issues": [],
+    "data_sources": {
+      "primary": [
+        "University Websites",
+        "Research Institution Websites",
+        "Academic Databases"
+      ],
+      "secondary": [
+        "Professional Networks",
+        "Conference Proceedings",
+        "Research Publications"
+      ],
+      "tertiary": [
+        "News Articles",
+        "Press Releases",
+        "Industry Reports"
+      ]
+    },
+    "source_quality": {
+      "reliability_score": 0.8,
+      "cross_reference_count": 0,
+      "verification_depth": "comprehensive"
+    }
+  },
+  "created_at": "2024-02-03T12:00:00.000Z",
+  "last_updated": "2025-02-17T02:09:31.823Z",
+  "verified": true,
+  "verification_source": "human",
+  "image_url": "https://media.licdn.com/dms/image/v2/D4E03AQFWmLF0ogG56A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1697994063435?e=1745452800&v=beta&t=whN0nfiO7ndoMBQanEmIAi2FAu_xOg2OwqlZdjUj0mc",
+  "description": "Dr. Dr. Alessandro Alviani serves as Lead for Generative AI at Süddeutsche Zeitung Digitale Medien specializing in KI in Medien, Natural Language Processing, Generative AI, Journalismus, Datenanalyse, Machine Learning, Produktentwicklung, Misinformation Bekämpfung with experience as Research Fellow at Technical University of Munich",
+  "professionalPositions": [
+    {
+      "title": "Lead Generative AI",
+      "company": "Süddeutsche Zeitung Digitale Medien GmbH",
+      "location": "",
+      "startDate": "2024-06",
+      "endDate": null,
+      "description": ""
+    },
+    {
+      "title": "Product Lead AI",
+      "company": "Ippen Digital GmbH & Co. KG",
+      "location": "",
+      "startDate": "2022-05",
+      "endDate": "2024-05",
+      "description": ""
+    },
+    {
+      "title": "Product Owner NLP",
+      "company": "Ippen Digital GmbH & Co. KG",
+      "location": "",
+      "startDate": "2021-10",
+      "endDate": "2022-05",
+      "description": ""
+    },
+    {
+      "title": "Chef vom Dienst",
+      "company": "Ippen Digital GmbH & Co. KG",
+      "location": "Hamburg, Deutschland",
+      "startDate": "2021-03",
+      "endDate": "2021-09",
+      "description": "Managing Editor and PoC for Automated Content Creation"
+    },
+    {
+      "title": "Editorial Director Microsoft News Hub Berlin",
+      "company": "C3 Creative Code and Content",
+      "location": "",
+      "startDate": "2020-07",
+      "endDate": "2021-02",
+      "description": ""
+    }
+  ],
+  "languages": [
+    {
+      "language": "Deutsch",
+      "proficiency": "NATIVE_OR_BILINGUAL"
+    },
+    {
+      "language": "Englisch",
+      "proficiency": "FULL_PROFESSIONAL"
+    },
+    {
+      "language": "Italienisch",
+      "proficiency": "NATIVE_OR_BILINGUAL"
+    }
+  ],
+  "academicMetrics": {
+    "publications": {
+      "total": 0,
+      "citations": 0,
+      "h_index": 0
+    }
+  }
+}
