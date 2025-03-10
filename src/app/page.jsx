@@ -17,6 +17,9 @@ import ExportButton from '@/components/export-button';
 import ExpertCard from '../components/expert-card';
 import { motion } from 'framer-motion';
 import DocumentManagement from '../components/document-management';
+import Login from '../components/Login';
+import users from '../data/users.json';
+import '../styles/darkMode.css';
 
 const DEFAULT_AVATAR = "/experts/avatar.jpg";
 
@@ -573,6 +576,8 @@ const renderFilterTag = (label, onRemove) => (
 );
 
 const Page = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
   const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [experts, setExperts] = useState([]);
@@ -985,9 +990,9 @@ const Page = () => {
     switch (activeModule) {
       case 'dashboard':
         return (
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transform transition-transform duration-500 hover:scale-105">
             {/* AI Expert Search Stats */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">KI Experten Analyse</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
@@ -1034,7 +1039,7 @@ const Page = () => {
             </div>
 
             {/* AI Company Stats */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">KI Unternehmen</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
@@ -1056,7 +1061,7 @@ const Page = () => {
             </div>
 
             {/* AI Enrichment Module */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">AI Enrichment</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
@@ -1083,7 +1088,7 @@ const Page = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">Recent Activity</h3>
               <div className="space-y-3">
                 {recentActivity.map((activity, index) => (
@@ -1290,13 +1295,13 @@ const Page = () => {
                 </div>
               </div>
 
-              {/* Search Section */}
+              {/* Search Section - Apply dark mode styling here */}
               <div className="mb-6">
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="Suche nach Firmen, Technologien oder Standorten..."
-                    className="w-full p-4 pl-12 pr-4 rounded-lg border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-4 pl-12 pr-4 rounded-lg border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ki-firmen-search"
                     value={companySearchQuery}
                     onChange={(e) => {
                       setCompanySearchQuery(e.target.value);
@@ -1546,8 +1551,44 @@ const Page = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showDropdown]);
 
+  // Handle dark mode toggle
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    if (typeof document !== 'undefined') {
+      if (!darkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+  };
+
+  // Apply dark mode on initial render
+  useEffect(() => {
+    if (typeof document !== 'undefined' && darkMode) {
+      document.body.classList.add('dark-mode');
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('dark-mode');
+      }
+    };
+  }, []);
+
+  // Handle login success
+  const handleLoginSuccess = () => {
+    console.log('Login successful');
+    setIsLoggedIn(true);
+  };
+
+  // If not logged in, show login screen
+  if (!isLoggedIn) {
+    return <Login users={users} onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Rest of the component for logged-in users
   return (
-    <div className="font-cabin min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-100">
+    <div className={`font-cabin min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-100 ${darkMode ? 'dark-mode' : ''}`}>
       <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between h-16">
@@ -1597,7 +1638,17 @@ const Page = () => {
               ))}
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-200"
+                aria-label="Toggle dark mode"
+              >
+                <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+              </button>
+              
+              {/* Notifications */}
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
