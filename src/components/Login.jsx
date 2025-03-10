@@ -1,130 +1,129 @@
-import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from 'react';
+import '../styles/darkMode.css';
 
 const Login = ({ users, onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showRequestAccess, setShowRequestAccess] = useState(false);
-  const [requestForm, setRequestForm] = useState({
-    name: '',
-    email: '',
-    username: '',
-    password: '',
-  });
+  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    const user = users.find((u) => u.username === username && u.password === password);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .animate-login-success {
+          animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    
+    // Check if the entered credentials match any user
+    const user = users.find(
+      (user) => user.username === username && user.password === password
+    );
+    
     if (user) {
-      toast.success('Login successful');
-      onLoginSuccess();
+      onLoginSuccess(user);
+      alert(`Welcome, ${user.username}!`);
     } else {
-      toast.error('Invalid username or password');
+      setError('Invalid username or password');
     }
   };
 
-  const handleRequestAccess = () => {
-    // Simulate sending request to admin
-    console.log('Request Access:', requestForm);
-    toast.success('Access request sent to admin');
-    setShowRequestAccess(false);
-  };
-
   return (
-    <div className="flex h-screen">
-      <div className="w-1/2 bg-gray-800 text-white flex items-center justify-center">
-        <h1 className="text-4xl font-bold">Internal Dashboard</h1>
-      </div>
-      <div className="w-1/2 bg-white flex items-center justify-center">
-        <div className="w-2/3">
-          <h2 className="text-2xl font-semibold mb-4">Login</h2>
-          <div className="mb-4">
-            <label className="block text-gray-700">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <button
-            onClick={handleLogin}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded mb-4"
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setShowRequestAccess(true)}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
-          >
-            Request Access
-          </button>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white login-container">
+      <div className="w-full max-w-md p-8 space-y-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-2xl border border-gray-700 login-form">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 login-header">
+            AI Expert Database
+          </h1>
+          <p className="mt-2 text-gray-400">Sign in to access the database</p>
         </div>
-      </div>
-
-      {showRequestAccess && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-1/3">
-            <h3 className="text-xl font-semibold mb-4">Request Access</h3>
-            <div className="mb-4">
-              <label className="block text-gray-700">Name</label>
-              <input
-                type="text"
-                value={requestForm.name}
-                onChange={(e) => setRequestForm({ ...requestForm, name: e.target.value })}
-                className="w-full px-3 py-2 border rounded"
-              />
+        
+        {error && (
+          <div className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded-lg relative text-center" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+                Username
+              </label>
+              <div className="mt-1">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-500 bg-gray-800/50 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm login-input"
+                  placeholder="Enter your username"
+                />
+              </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Email</label>
-              <input
-                type="email"
-                value={requestForm.email}
-                onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded"
-              />
+            
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-500 bg-gray-800/50 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm login-input"
+                  placeholder="Enter your password"
+                />
+              </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Username</label>
-              <input
-                type="text"
-                value={requestForm.username}
-                onChange={(e) => setRequestForm({ ...requestForm, username: e.target.value })}
-                className="w-full px-3 py-2 border rounded"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Password</label>
-              <input
-                type="password"
-                value={requestForm.password}
-                onChange={(e) => setRequestForm({ ...requestForm, password: e.target.value })}
-                className="w-full px-3 py-2 border rounded"
-              />
-            </div>
+          </div>
+          
+          <div>
             <button
-              onClick={handleRequestAccess}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded"
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 login-button"
             >
-              Send Request
-            </button>
-            <button
-              onClick={() => setShowRequestAccess(false)}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded mt-2"
-            >
-              Cancel
+              <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                <svg className="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2-2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+              </span>
+              Sign in
             </button>
           </div>
+          
+          <div className="flex items-center justify-center">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-blue-400 hover:text-blue-300">
+                Forgot your password?
+              </a>
+            </div>
+          </div>
+        </form>
+        
+        <div className="mt-6 text-center text-sm">
+          <p className="text-gray-500">
+            Demo credentials: <span className="text-gray-400">user / password</span>
+          </p>
         </div>
-      )}
+      </div>
     </div>
   );
 };

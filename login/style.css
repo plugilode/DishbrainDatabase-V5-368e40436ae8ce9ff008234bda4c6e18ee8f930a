@@ -1,0 +1,198 @@
+:root {
+    --primary-color: #6366f1;
+    --secondary-color: #8b5cf6;
+    --background: #0f172a;
+    --text-color: #e2e8f0;
+    --black-bg: #000000;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-color: var(--background);
+    color: var(--text-color);
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.left-side {
+    flex: 1;
+    background-color: var(--black-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    position: relative;
+}
+
+.left-side h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-align: center;
+    margin-top: 1rem;
+    display: none; /* Hide the text title since we have a logo now */
+}
+
+.left-side h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    opacity: 0.8;
+    text-align: center;
+}
+
+.ai-animation {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle at center, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    z-index: 0;
+    opacity: 0.5;
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.login-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 2rem;
+    width: 320px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--primary-color);
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-color);
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.input-group label {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    pointer-events: none;
+    transition: 0.3s ease;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.input-group input:focus,
+.input-group input:not(:placeholder-shown) {
+    border-bottom-color: var(--primary-color);
+}
+
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+    transform: translateY(-20px);
+    font-size: 0.8rem;
+    color: var(--primary-color);
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 1rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.login-btn {
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.register-btn {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-top: 0.5rem;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+.login-btn:hover {
+    background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
+}
+
+.register-btn:hover {
+    border-color: var(--primary-color);
+}
+
+.hologram-effect {
+    position: absolute;
+    top: -30px;
+    left: -30px;
+    right: -30px;
+    bottom: -30px;
+    border-radius: 20px;
+    background: linear-gradient(45deg, transparent 48%, rgba(99, 102, 241, 0.1) 50%, transparent 52%);
+    z-index: 0;
+    animation: hologram 10s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes hologram {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 300% 300%;
+    }
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    z-index: 1;
+    position: relative;
+}
+
+.logo-image {
+    max-width: 240px;
+    height: auto;
+    filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+}

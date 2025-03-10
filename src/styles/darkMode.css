@@ -1,0 +1,53 @@
+/* Dark mode styling for Ki-Firmen search bar */
+.ki-firmen-search {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+.ki-firmen-search::placeholder {
+  color: #aaa;
+}
+
+.ki-firmen-search:focus {
+  outline: none;
+  border-color: #777;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode for search container if needed */
+.search-container {
+  background-color: #222;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* Dark mode for search button if applicable */
+.search-button {
+  background-color: #555;
+  color: #fff;
+  border: none;
+  padding: 5px 15px;
+}
+
+.search-button:hover {
+  background-color: #777;
+}
+
+/* Dark mode for company card */
+.company-card {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.company-card h3 {
+  margin: 0 0 5px 0;
+}
+
+.company-card p {
+  margin: 0;
+}
