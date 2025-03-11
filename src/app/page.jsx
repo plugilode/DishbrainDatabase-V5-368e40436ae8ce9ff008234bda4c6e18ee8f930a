@@ -1,6 +1,8 @@
 "use client";
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import ItemInventoryManager from "../components/item-inventory-manager";
 import PaymentRemindersModule from "../components/payment-reminders-module";
 import TaxCalculationModule from "../components/tax-calculation-module";
@@ -12,11 +14,19 @@ import Pagination from '../components/common/pagination';
 import CompanyDetailsPopup from '../components/company-details-popup';
 import ExpertFormPopup from '../components/expert-form-popup';
 import CompanyFormPopup from '../components/company-form-popup';
-import { toast } from 'react-hot-toast';
 import ExportButton from '@/components/export-button';
 import ExpertCard from '../components/expert-card';
 import { motion } from 'framer-motion';
 import DocumentManagement from '../components/document-management';
+import FindingDetailPopup from '../../components/findings/finding-detail-popup';
+import { loadFindings, saveFindings, saveApprovedFindingsToDatabase, generateMockFindings } from '../utils/findingManager';
+import DatabaseBackup from "../../components/admin/DatabaseBackup";
+import UserManagement from "../../components/admin/UserManagement";
+import SystemLog from "../../components/admin/SystemLog";
+import ApiManager from "../../components/admin/ApiManager";
+import { useAuth } from '../../context/auth-context';
+import { decrypt } from '../../utils/encryption';
+import CompaniesOverview from '../components/dashboard/CompaniesOverview';
 
 const DEFAULT_AVATAR = "/experts/avatar.jpg";
 
@@ -573,7 +583,10 @@ const renderFilterTag = (label, onRemove) => (
 );
 
 const Page = () => {
-  const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [experts, setExperts] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -619,11 +632,47 @@ const Page = () => {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(null);
+  const [agentFindings, setAgentFindings] = useState([
+    {
+      id: 'finding-1',
+      expert: 'Dr. Sarah Chen',
+      type: 'Publication',
+      content: 'New research paper on quantum machine learning algorithms in Nature',
+      source: 'https://nature.com/articles/q-ml-2023',
+      date: '2023-10-15',
+      approved: false,
+      relevance: 0.92
+    },
+    {
+      id: 'finding-2',
+      expert: 'Prof. Klaus Müller',
+      type: 'Patent',
+      content: 'Filed patent for novel neural network architecture optimized for edge devices',
+      source: 'https://patents.org/neural-edge-2023',
+      date: '2023-09-28',
+      approved: false,
+      relevance: 0.87
+    },
+    {
+      id: 'finding-3',
+      expert: 'Maria Schmidt',
+      type: 'Collaboration',
+      content: 'Started new research project with Google DeepMind on generative AI ethics',
+      source: 'https://deepmind.com/collaborations/ethics-2023',
+      date: '2023-10-02',
+      approved: false,
+      relevance: 0.95
+    }
+  ]);
+  const [reviewingFindings, setReviewingFindings] = useState(false);
+  const [selectedFinding, setSelectedFinding] = useState(null);
+  const [featuredExpert, setFeaturedExpert] = useState(null);
+  const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-line' },
     { id: 'experts', label: 'KI Experten', icon: 'fas fa-users' },
-    { id: 'office', label: 'Büro Tools', icon: 'fas fa-toolbox' },
+    { id: 'office', label: 'Admin Tools', icon: 'fas fa-toolbox' },
     { id: 'development', label: 'Entwicklung', icon: 'fas fa-code' },
     { id: 'firms', label: 'KI Firmen', icon: 'fas fa-building' },
     {
@@ -981,56 +1030,229 @@ const Page = () => {
     }
   };
 
+  // Funktion zum Genehmigen oder Ablehnen von Findings
+  const handleFindingAction = async (id, isApproved) => {
+    try {
+      // In einer realen App würde hier eine API aufgerufen werden
+      // Simulieren einer API-Anfrage mit einem kurzen Delay
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Aktualisiere den Genehmigungsstatus des Findings
+      const updatedFindings = agentFindings.map(finding => 
+        finding.id === id ? { ...finding, approved: isApproved } : finding
+      );
+      
+      setAgentFindings(updatedFindings);
+      
+      // Bei Genehmigung eine Erfolgsmeldung anzeigen
+      if (isApproved) {
+        toast.success('Finding zur Datenbank hinzugefügt');
+      } else {
+        toast.info('Finding verworfen');
+      }
+      
+      // In einer realen Anwendung würden wir die Findings speichern
+      // localStorage.setItem('approvedFindings', JSON.stringify(
+      //   updatedFindings.filter(finding => finding.approved)
+      // ));
+      
+    } catch (error) {
+      console.error('Error processing finding:', error);
+      toast.error('Fehler bei der Verarbeitung des Findings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Funktion zum Verarbeiten aller noch nicht beurteilten Findings
+  const approveAllFindings = async () => {
+    try {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const updatedFindings = agentFindings.map(finding => ({ ...finding, approved: true }));
+      setAgentFindings(updatedFindings);
+      
+      toast.success('Alle Findings wurden genehmigt und gespeichert');
+      setReviewingFindings(false);
+    } catch (error) {
+      console.error('Error approving all findings:', error);
+      toast.error('Fehler beim Genehmigen der Findings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Funktion zum Genehmigen von Findings mit zusätzlichen Kommentaren
+  const handleFindingApprove = async (id, comments = '') => {
+    try {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Aktualisiere den Genehmigungsstatus des Findings mit Kommentaren
+      const updatedFindings = agentFindings.map(finding => 
+        finding.id === id ? { 
+          ...finding, 
+          approved: true, 
+          rejected: false,
+          comments, 
+          approvalDate: new Date().toISOString() 
+        } : finding
+      );
+      
+      setAgentFindings(updatedFindings);
+      
+      // In einer realen Anwendung würden wir das speichern
+      const saved = saveFindings(updatedFindings);
+      if (!saved) {
+        console.warn("Findings konnten nicht gespeichert werden");
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error approving finding:', error);
+      toast.error('Fehler bei der Genehmigung des Findings: ' + error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Funktion zum Ablehnen von Findings mit Kommentaren
+  const handleFindingReject = async (id, comments = '') => {
+    try {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Aktualisiere den Ablehnungsstatus des Findings mit Kommentaren
+      const updatedFindings = agentFindings.map(finding => 
+        finding.id === id ? { 
+          ...finding, 
+          approved: false,
+          rejected: true,  
+          comments, 
+          rejectionDate: new Date().toISOString() 
+        } : finding
+      );
+      
+      setAgentFindings(updatedFindings);
+      
+      // In einer realen Anwendung würden wir das speichern
+      const saved = saveFindings(updatedFindings);
+      if (!saved) {
+        console.warn("Findings konnten nicht gespeichert werden");
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error rejecting finding:', error);
+      toast.error('Fehler bei der Ablehnung des Findings: ' + error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generiere neue Findings
+  const handleStartResearch = async () => {
+    try {
+      setIsLoading(true);
+      toast.loading('Agent Research wird gestartet...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Generiere neue Mock-Findings basierend auf Experten
+      const newFindings = generateMockFindings(experts, 5);
+      setAgentFindings(prevFindings => {
+        // Filtere abgelehnte Findings heraus und füge neue hinzu
+        const activeFindings = prevFindings.filter(f => !f.rejected);
+        return [...activeFindings, ...newFindings];
+      });
+
+      toast.dismiss();
+      toast.success('Neue Findings wurden gefunden!');
+      setReviewingFindings(true);
+    } catch (error) {
+      console.error('Research error:', error);
+      toast.dismiss();
+      toast.error('Fehler beim Starten der Forschung: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderContent = () => {
     switch (activeModule) {
       case 'dashboard':
         return (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* AI Expert Search Stats */}
+            {/* KI Experten Analyse mit zufälligem Experten */}
             <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-gray-100">KI Experten Analyse</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Gesamt Experten</span>
-                  <span className="font-bold text-blue-400">{experts.length}</span>
-                </div>
-                
-                {/* Top 5 Categories */}
-                <div className="mt-4">
-                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Top 5 Kategorien</h4>
-                  <div className="space-y-2">
-                    {getTopCategories(experts).map(({ category, count }, index) => (
-                      <div key={category} className="flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-                        <div className="flex-1 flex justify-between items-center">
-                          <span className="text-sm text-gray-600">{category}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 bg-blue-100 rounded-full w-24 overflow-hidden">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full"
-                                style={{ 
-                                  width: `${(count / experts.length) * 100}%`
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">
-                              {count}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              {featuredExpert ? (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    {/* Expert Image */}
+                    <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 ring-1 ring-gray-700/50">
+                      <img
+                        src={getImageUrl(featuredExpert)}
+                        alt={getDisplayName(featuredExpert)}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = DEFAULT_AVATAR;
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Expert Info */}
+                    <div className="flex-1">
+                      <h4 className="text-lg font-medium text-gray-200">
+                        {getDisplayName(featuredExpert)}
+                      </h4>
+                      <p className="text-gray-400 text-sm">
+                        {featuredExpert.position || featuredExpert.currentRole?.title || 'KI Experte'}
+                      </p>
+                    </div>
                   </div>
+                  
+                  {/* Expertise Tags */}
+                  <div className="mt-3">
+                    <div className="text-sm text-gray-500 mb-2">Expertise:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {getExpertiseArray(featuredExpert).slice(0, 3).map((item, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 text-xs rounded-full bg-blue-900/30 text-blue-400 border border-blue-800/50 shadow-inner"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Detail Button */}
+                  <button
+                    onClick={() => setSelectedExpert(featuredExpert)}
+                    className="mt-2 w-full px-3 py-2 bg-gradient-to-r from-blue-900 to-blue-800 text-blue-100 rounded-lg hover:from-blue-800 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-900/20 text-sm flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-info-circle"></i>
+                    Details anzeigen
+                  </button>
                 </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Neu diese Woche</span>
-                  <span className="font-bold text-purple-400">12</span>
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
+                  <i className="fas fa-spinner fa-spin text-xl mb-2"></i>
+                  <p>Lade Experten...</p>
                 </div>
-                <Component3DButtonDesign onClick={() => setActiveModule('experts')}>
-                  Alle Experten anzeigen
-                </Component3DButtonDesign>
-              </div>
+              )}
+              
+              <button 
+                onClick={() => setActiveModule('experts')} 
+                className="mt-6 w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <i className="fas fa-users"></i>
+                Alle Experten anzeigen
+              </button>
             </div>
 
             {/* AI Company Stats */}
@@ -1049,37 +1271,172 @@ const Page = () => {
                   <span className="text-gray-400">Neue Startups</span>
                   <span className="font-bold text-purple-400">8</span>
                 </div>
-                <Component3DButtonDesign onClick={() => setActiveModule('firms')}>
+                <button 
+                  onClick={() => setActiveModule('firms')}
+                  className="mt-4 w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <i className="fas fa-building"></i>
                   Alle Unternehmen anzeigen
-                </Component3DButtonDesign>
+                </button>
               </div>
             </div>
 
-            {/* AI Enrichment Module */}
+            {/* AI Enrichment Module -> Umbenannt zu Agent Research */}
             <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-gray-100">AI Enrichment</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-400">AI Agent Status: Active</span>
+              <h3 className="text-xl font-bold mb-4 text-gray-100">Agent Research</h3>
+              
+              {reviewingFindings ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-gray-300 font-medium">Neue Findings überprüfen</h4>
+                    <button
+                      onClick={() => setReviewingFindings(false)}
+                      className="text-gray-400 hover:text-gray-300"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                    {agentFindings.filter(finding => !finding.approved && !finding.rejected).map(finding => (
+                      <div 
+                        key={finding.id}
+                        className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 space-y-2"
+                      >
+                        <div className="flex justify-between">
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            finding.type === 'Publication' ? 'bg-blue-900/50 text-blue-400' :
+                            finding.type === 'Patent' ? 'bg-green-900/50 text-green-400' :
+                            'bg-purple-900/50 text-purple-400'
+                          }`}>
+                            {finding.type}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {finding.date}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <span className="text-blue-400 font-medium">{finding.expert}:</span>
+                          <p className="text-gray-300 text-sm">{finding.content}</p>
+                        </div>
+                        
+                        {finding.source && (
+                          <div className="text-xs">
+                            <a 
+                              href={finding.source} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-500 hover:text-blue-400 flex items-center gap-1"
+                            >
+                              <i className="fas fa-external-link-alt"></i>
+                              Quelle
+                            </a>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1">
+                            <i className="fas fa-chart-line text-gray-500"></i>
+                            <span className="text-xs text-gray-500">Relevanz: {Math.round(finding.relevance * 100)}%</span>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            {/* Details Button hinzugefügt */}
+                            <button
+                              onClick={() => setSelectedFinding(finding)}
+                              className="px-2 py-1 bg-blue-700/70 text-blue-200 text-xs rounded hover:bg-blue-700 transition-colors"
+                            >
+                              <i className="fas fa-search mr-1"></i>
+                              Details
+                            </button>
+                            <button
+                              onClick={() => handleFindingAction(finding.id, true)}
+                              disabled={isLoading}
+                              className="px-2 py-1 bg-green-700/70 text-green-200 text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                            >
+                              <i className="fas fa-check mr-1"></i>
+                              Genehmigen
+                            </button>
+                            <button
+                              onClick={() => handleFindingAction(finding.id, false)}
+                              disabled={isLoading}
+                              className="px-2 py-1 bg-gray-700/70 text-gray-300 text-xs rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            >
+                              <i className="fas fa-times mr-1"></i>
+                              Ablehnen
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {agentFindings.filter(finding => !finding.approved && !finding.rejected).length === 0 && (
+                      <div className="text-center py-6 text-gray-500">
+                        <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+                        <p>Alle Findings wurden überprüft</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between mt-4">
+                    <span className="text-sm text-gray-500">
+                      {agentFindings.filter(finding => !finding.approved && !finding.rejected).length} Findings übrig
+                    </span>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={approveAllFindings}
+                        disabled={isLoading || agentFindings.filter(finding => !finding.approved && !finding.rejected).length === 0}
+                        className="px-3 py-1 bg-blue-700 text-white text-sm rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Alle genehmigen
+                      </button>
+                      <button
+                        onClick={() => setReviewingFindings(false)}
+                        className="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 transition-colors"
+                      >
+                        Schließen
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <p>Recent Enrichments:</p>
-                  <ul className="list-disc list-inside mt-2">
-                    <li>Expert profiles updated: 23</li>
-                    <li>New connections found: 45</li>
-                    <li>Publications added: 12</li>
-                  </ul>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-400">Agent Status: Active</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>Aktuelle Forschungsergebnisse:</p>
+                    <ul className="list-disc list-inside mt-2">
+                      <li>Expertenprofile aktualisiert: 23</li>
+                      <li>Neue Verbindungen gefunden: 45</li>
+                      <li>Publikationen hinzugefügt: 12</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => setReviewingFindings(true)}
+                      disabled={isLoading || agentFindings.filter(f => !f.approved && !f.rejected).length === 0}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <i className="fas fa-search"></i>
+                      Findings überprüfen ({agentFindings.filter(f => !f.approved && !f.rejected).length})
+                    </button>
+                    
+                    <button
+                      onClick={handleStartResearch}
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
+                      {isLoading ? 'Agent arbeitet...' : 'Research starten'}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={handleEnrichment}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-magic'}`}></i>
-                  {isLoading ? 'Wird angereichert...' : 'KI Anreicherung'}
-                </button>
-              </div>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -1251,11 +1608,91 @@ const Page = () => {
         return (
           <div className="p-6">
             <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-100">Office Tools</h2>
-              {/* Add your office tools content here */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold mb-4 text-gray-100">Admin Tools</h2>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                  <i className="fas fa-cog"></i>
+                  Einstellungen
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Benutzerverwaltung */}
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700/50">
+                  <UserManagement />
+                </div>
+                
+                {/* Datenbank-Backup */}
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700/50">
+                  <DatabaseBackup />
+                </div>
+                
+                {/* System-Log */}
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700/50">
+                  <SystemLog />
+                </div>
+                
+                {/* API-Verwaltung */}
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700/50">
+                  <ApiManager />
+                </div>
+              </div>
+              
+              {/* Systemstatus-Abschnitt */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-200 mb-4">Systemstatus</h3>
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 border border-gray-700/50">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* CPU-Auslastung */}
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400">CPU</span>
+                        <span className="text-blue-400 font-medium">32%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500" style={{ width: '32%' }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* RAM-Auslastung */}
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400">RAM</span>
+                        <span className="text-green-400 font-medium">64%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500" style={{ width: '64%' }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* Festplattenspeicher */}
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400">Speicher</span>
+                        <span className="text-orange-400 font-medium">78%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-500" style={{ width: '78%' }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* Netzwerktraffic */}
+                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400">Netzwerk</span>
+                        <span className="text-purple-400 font-medium">23 MB/s</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500" style={{ width: '46%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
+      
       case 'development':
         return (
           <div className="p-6">
@@ -1322,9 +1759,9 @@ const Page = () => {
 
               {/* Companies Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {companies.map((company) => (
+                {companies.map((company, index) => (
                   <div 
-                    key={company.id}
+                    key={`company-${company.id || index}`}
                     className="bg-gradient-to-br from-gray-900 to-black rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-800/50"
                   >
                     {/* Header with Logo and Name */}
@@ -1493,6 +1930,12 @@ const Page = () => {
         setFilteredExperts(expertsData);
         setCompanies(companiesData);
         setFilteredCompanies(companiesData);
+        
+        // Wähle einen zufälligen Experten für das Feature aus
+        if (expertsData.length > 0) {
+          const randomIndex = Math.floor(Math.random() * expertsData.length);
+          setFeaturedExpert(expertsData[randomIndex]);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
         setLoadError('Fehler beim Laden der Daten');
@@ -1537,7 +1980,7 @@ const Page = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showDropdown && !event.target.closest('.relative')) {
+      if (showDropdown && !event.target.closest('.dropdown-container')) {
         setShowDropdown(null);
       }
     };
@@ -1546,9 +1989,58 @@ const Page = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showDropdown]);
 
+  useEffect(() => {
+    // Prüfe, ob der Benutzer eingeloggt ist
+    const checkAuth = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || 
+                         sessionStorage.getItem('isLoggedIn') === 'true';
+      
+      setIsLoggedIn(isLoggedIn);
+      setIsCheckingAuth(false);
+
+      if (!isLoggedIn) {
+        router.push('/login');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Logout-Funktion
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('isLoggedIn');
+    toast.success('Erfolgreich ausgeloggt');
+    router.push('/login');
+  };
+
+  // Funktion zum Abrufen und Entschlüsseln von Benutzerdaten
+  const getDecryptedUser = () => {
+    try {
+      const encryptedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (encryptedUser) {
+        const decryptedUser = decrypt(encryptedUser);
+        return JSON.parse(decryptedUser);
+      }
+      return { name: "Benutzer" };
+    } catch (error) {
+      console.error('Error decrypting user data:', error);
+      return { name: "Benutzer" };
+    }
+  };
+
+  // Falls noch Authentifizierung geprüft wird, zeige Ladeanimation
+  if (isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="font-cabin min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-100">
-      <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm">
+      <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -1559,9 +2051,9 @@ const Page = () => {
 
             <div className="flex">
               {menuItems.map((item) => (
-                <div key={item.id} className="relative">
+                <div key={item.id} className="relative dropdown-container">
                   <button 
-                    onClick={() => item.hasDropdown ? setShowDropdown(item.id) : handleMenuClick(item.id)}
+                    onClick={() => item.hasDropdown ? setShowDropdown(item.id === showDropdown ? null : item.id) : handleMenuClick(item.id)}
                     className={`inline-flex items-center px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
                       activeModule === item.id
                         ? 'border-blue-500 text-blue-400 bg-gray-800/30'
@@ -1575,7 +2067,7 @@ const Page = () => {
                     )}
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown Menu mit höherem z-index */}
                   {item.hasDropdown && showDropdown === item.id && (
                     <div className="absolute top-full left-0 mt-1 w-56 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl backdrop-blur-sm z-50">
                       {item.dropdownItems.map((dropdownItem) => (
@@ -1598,148 +2090,221 @@ const Page = () => {
             </div>
 
             <div className="flex items-center">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
-              >
-                <i className="fas fa-bell"></i>
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
-                    {notifications.length}
-                  </span>
+              <div className="dropdown-container relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
+                >
+                  <i className="fas fa-bell"></i>
+                  {notifications.length > 0 && (
+                    <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Benachrichtigungen Dropdown mit höherem z-index */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800 shadow-xl backdrop-blur-sm z-50">
+                    <div className="p-4 border-b">
+                      <h3 className="text-lg font-semibold">Benachrichtigungen</h3>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.map((notification, index) => (
+                        <div key={index} className="p-4 border-b hover:bg-gray-800">
+                          <p className="text-sm text-gray-400">{notification.message}</p>
+                        </div>
+                      ))}
+                      {notifications.length === 0 && (
+                        <div className="p-4 text-center text-gray-500">
+                          Keine neuen Benachrichtigungen
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
+              
+              {/* Benutzer-Dropdown mit höherem z-index */}
+              <div className="dropdown-container relative ml-3">
+                <button
+                  onClick={() => setShowDropdown(showDropdown === 'user' ? null : 'user')}
+                  className="p-2 rounded-full text-gray-400 hover:text-gray-200 flex items-center"
+                  aria-expanded={showDropdown === 'user'}
+                  aria-haspopup="true"
+                >
+                  <span className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                    <i className="fas fa-user"></i>
+                  </span>
+                </button>
+                
+                {showDropdown === 'user' && (
+                  <div 
+                    className="absolute right-0 mt-2 w-48 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl z-50"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu-button"
+                  >
+                    <div className="py-1">
+                      {/* Anzeige des Benutzernamens */}
+                      <div className="px-4 py-2 text-sm text-gray-300 border-b border-gray-800">
+                        {getDecryptedUser().name}
+                      </div>
+                      <a
+                        href="/profile"
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                      >
+                        <i className="fas fa-user-circle mr-2"></i>
+                        Profil
+                      </a>
+                      <a
+                        href="/settings"
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                      >
+                        <i className="fas fa-cog mr-2"></i>
+                        Einstellungen
+                      </a>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                      >
+                        <i className="fas fa-sign-out-alt mr-2"></i>
+                        Abmelden
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="flex-1">
+      <main className="flex-1 relative">
         {isLoadingExperts ? renderLoading() : renderContent()}
       </main>
 
-      {showNotifications && (
-        <div className="fixed top-16 right-4 w-80 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800 shadow-xl backdrop-blur-sm">
-          <div className="p-4 border-b">
-            <h3 className="text-lg font-semibold">Notifications</h3>
-          </div>
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.map((notification, index) => (
-              <div key={index} className="p-4 border-b hover:bg-gray-800">
-                <p className="text-sm text-gray-400">{notification.message}</p>
-              </div>
-            ))}
-            {notifications.length === 0 && (
-              <div className="p-4 text-center text-gray-500">
-                No new notifications
-              </div>
-            )}
-          </div>
+      {/* Portale für Modals und Popups mit höherem z-index */}
+      {showAddExpertPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+          <ExpertFormPopup
+            onClose={() => setShowAddExpertPopup(false)}
+            onSubmit={async (expertData) => {
+              try {
+                // Show immediate feedback
+                toast.loading('Speichere Experten...', { id: 'saveExpert' });
+
+                // Make the API call to create the expert
+                const response = await fetch('/api/experts', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(expertData),
+                });
+
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.error || 'Fehler beim Erstellen des Experten');
+                }
+
+                // Update UI immediately with new expert
+                setExperts(prev => [...prev, expertData]);
+                setFilteredExperts(prev => [...prev, expertData]);
+                
+                // Close the popup immediately
+                setShowAddExpertPopup(false);
+
+                // Show success message
+                toast.success(`Experte ${expertData.name} wurde gespeichert`, { id: 'saveExpert' });
+
+                // Refresh the list in background
+                loadExpertsData().then(updatedExperts => {
+                  setExperts(updatedExperts);
+                  setFilteredExperts(updatedExperts);
+                });
+
+              } catch (error) {
+                console.error('Error creating expert:', error);
+                toast.error(error.message || 'Fehler beim Speichern', { id: 'saveExpert' });
+                throw error;
+              }
+            }}
+          />
         </div>
       )}
 
-      {showAddExpertPopup && (
-        <ExpertFormPopup
-          onClose={() => setShowAddExpertPopup(false)}
-          onSubmit={async (expertData) => {
-            try {
-              // Show immediate feedback
-              toast.loading('Speichere Experten...', { id: 'saveExpert' });
-
-              // Make the API call to create the expert
-              const response = await fetch('/api/experts', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(expertData),
-              });
-
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Fehler beim Erstellen des Experten');
-              }
-
-              // Update UI immediately with new expert
-              setExperts(prev => [...prev, expertData]);
-              setFilteredExperts(prev => [...prev, expertData]);
-              
-              // Close the popup immediately
-              setShowAddExpertPopup(false);
-
-              // Show success message
-              toast.success(`Experte ${expertData.name} wurde gespeichert`, { id: 'saveExpert' });
-
-              // Refresh the list in background
-              loadExpertsData().then(updatedExperts => {
-                setExperts(updatedExperts);
-                setFilteredExperts(updatedExperts);
-              });
-
-            } catch (error) {
-              console.error('Error creating expert:', error);
-              toast.error(error.message || 'Fehler beim Speichern', { id: 'saveExpert' });
-              throw error;
-            }
-          }}
-        />
-      )}
-
       {selectedExpert && (
-        <ExpertDetailsPopup
-          expert={selectedExpert}
-          onClose={() => setSelectedExpert(null)}
-          onUpdate={handleExpertUpdate}
-        />
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+          <ExpertDetailsPopup
+            expert={selectedExpert}
+            onClose={() => setSelectedExpert(null)}
+            onUpdate={handleExpertUpdate}
+          />
+        </div>
       )}
 
       {selectedCompany && (
-        <CompanyDetailsPopup
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-          onUpdate={handleCompanyUpdate}
-        />
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+          <CompanyDetailsPopup
+            company={selectedCompany}
+            onClose={() => setSelectedCompany(null)}
+            onUpdate={handleCompanyUpdate}
+          />
+        </div>
       )}
 
       {showAddCompanyPopup && (
-        <CompanyFormPopup
-          onClose={() => setShowAddCompanyPopup(false)}
-          onSubmit={async (companyData) => {
-            try {
-              const response = await fetch('/api/companies', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(companyData),
-              });
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+          <CompanyFormPopup
+            onClose={() => setShowAddCompanyPopup(false)}
+            onSubmit={async (companyData) => {
+              try {
+                const response = await fetch('/api/companies', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(companyData),
+                });
 
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to create company');
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.error || 'Failed to create company');
+                }
+
+                // Get the response
+                const result = await response.json();
+                console.log('Company created:', result); // Add this for debugging
+
+                // Refresh the companies list
+                const updatedCompanies = await loadCompanies();
+                setCompanies(updatedCompanies);
+                setFilteredCompanies(updatedCompanies);
+                
+                // Show success notification
+                toast.success(`Firma ${companyData.name} wurde erfolgreich erstellt`);
+                
+                // Close the popup
+                setShowAddCompanyPopup(false);
+
+              } catch (error) {
+                console.error('Error creating company:', error);
+                toast.error(error.message || 'Failed to create company');
+                throw error;
               }
+            }}
+          />
+        </div>
+      )}
 
-              // Get the response
-              const result = await response.json();
-              console.log('Company created:', result); // Add this for debugging
-
-              // Refresh the companies list
-              const updatedCompanies = await loadCompanies();
-              setCompanies(updatedCompanies);
-              setFilteredCompanies(updatedCompanies);
-              
-              // Show success notification
-              toast.success(`Firma ${companyData.name} wurde erfolgreich erstellt`);
-              
-              // Close the popup
-              setShowAddCompanyPopup(false);
-
-            } catch (error) {
-              console.error('Error creating company:', error);
-              toast.error(error.message || 'Failed to create company');
-              throw error;
-            }
-          }}
+      {/* Finding Detail Popup */}
+      {selectedFinding && (
+        <FindingDetailPopup
+          finding={selectedFinding}
+          onClose={() => setSelectedFinding(null)}
+          onApprove={handleFindingApprove}
+          onReject={handleFindingReject}
         />
       )}
 
