@@ -4,37 +4,70 @@ export async function POST(request) {
   try {
     const { company } = await request.json();
 
-    const domain = company.domain || new URL(company.website).hostname;
+    // Mock-Daten für die Entwicklung
+    const mockData = {
+      name: company.name,
+      legal_name: `${company.name} GmbH`,
+      website: company.website || '',
+      domain: company.domain || '',
+      description: 'Ein führendes KI-Unternehmen...',
+      founded_year: '2020',
+      employee_count: '50-100',
+      technologies: [
+        'Machine Learning',
+        'Neural Networks',
+        'Computer Vision',
+        'NLP'
+      ],
+      ai_focus_areas: [
+        'Deep Learning',
+        'Reinforcement Learning',
+        'Natural Language Processing'
+      ],
+      company_type: 'AI Research & Development',
+      industry: 'Artificial Intelligence',
+      revenue_range: '1M-10M EUR',
+      social_profiles: {
+        linkedin: `https://linkedin.com/company/${company.name.toLowerCase().replace(/\s+/g, '-')}`,
+        twitter: `https://twitter.com/${company.name.toLowerCase().replace(/\s+/g, '')}`,
+      }
+    };
 
-    const apiKey = process.env.BIGDATA_API_KEY;
-    if (!apiKey) {
-      throw new Error('BIGDATA_API_KEY is not set in environment variables.');
-    }
+    // Simulierte API-Verzögerung
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const response = await fetch(`https://company.bigpicture.io/v1/companies/find?domain=${domain}`, {
+    return new NextResponse(JSON.stringify(mockData), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': apiKey,
-      },
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
     });
-
-    if (!response.ok) {
-      throw new Error(`BigData API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return NextResponse.json(data);
 
   } catch (error) {
     console.error('Error enriching company data:', error);
-    return NextResponse.json(
+    return new NextResponse(
+      JSON.stringify({ error: error.message || 'Failed to enrich company data' }), 
       { 
-        error: 'Failed to enrich company data',
-        message: error.message 
-      },
-      { status: 500 }
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
 }
