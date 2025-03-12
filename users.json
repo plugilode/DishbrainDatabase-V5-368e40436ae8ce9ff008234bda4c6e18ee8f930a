@@ -1,0 +1,30 @@
+[
+    {
+        "username": "pblanks",
+        "password": "Patrick82",
+        "fullName": "Patrick Blanks",
+        "role": "admin",
+		"approved": true
+    },
+    {
+        "username": "user1",
+        "password": "password1",
+        "fullName": "User One",
+        "role": "user",
+		"approved": true
+    },
+    {
+        "username": "user2",
+        "password": "password2",
+        "fullName": "User Two",
+        "role": "user",
+		"approved": false
+    },
+    {
+        "username": "user3",
+        "password": "password3",
+        "fullName": "User Three",
+        "role": "user",
+		"approved": false
+    }
+]

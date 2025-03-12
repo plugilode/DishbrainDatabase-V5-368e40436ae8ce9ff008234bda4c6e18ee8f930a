@@ -18,15 +18,6 @@ import ExportButton from '@/components/export-button';
 import ExpertCard from '../components/expert-card';
 import { motion } from 'framer-motion';
 import DocumentManagement from '../components/document-management';
-import FindingDetailPopup from '../../components/findings/finding-detail-popup';
-import { loadFindings, saveFindings, saveApprovedFindingsToDatabase, generateMockFindings } from '../utils/findingManager';
-import DatabaseBackup from "../../components/admin/DatabaseBackup";
-import UserManagement from "../../components/admin/UserManagement";
-import SystemLog from "../../components/admin/SystemLog";
-import ApiManager from "../../components/admin/ApiManager";
-import { useAuth } from '../../context/auth-context';
-import { decrypt } from '../../utils/encryption';
-import CompaniesOverview from '../components/dashboard/CompaniesOverview';
 
 const DEFAULT_AVATAR = "/experts/avatar.jpg";
 
@@ -583,10 +574,7 @@ const renderFilterTag = (label, onRemove) => (
 );
 
 const Page = () => {
-  const router = useRouter();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [experts, setExperts] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -1186,58 +1174,46 @@ const Page = () => {
       case 'dashboard':
         return (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* KI Experten Analyse mit zufälligem Experten */}
+            {/* AI Expert Search Stats */}
             <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
-              {featuredExpert ? (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    {/* Expert Image */}
-                    <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 ring-1 ring-gray-700/50">
-                      <img
-                        src={getImageUrl(featuredExpert)}
-                        alt={getDisplayName(featuredExpert)}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = DEFAULT_AVATAR;
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Expert Info */}
-                    <div className="flex-1">
-                      <h4 className="text-lg font-medium text-gray-200">
-                        {getDisplayName(featuredExpert)}
-                      </h4>
-                      <p className="text-gray-400 text-sm">
-                        {featuredExpert.position || featuredExpert.currentRole?.title || 'KI Experte'}
-                      </p>
-                    </div>
+              <h3 className="text-xl font-bold mb-4 text-gray-100">KI Experten Analyse</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Gesamt Experten</span>
+                  <span className="font-bold text-blue-400">{experts.length}</span>
+                </div>
+                
+                {/* Top 5 Categories */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Top 5 Kategorien</h4>
+                  <div className="space-y-2">
+                    {getTopCategories(experts).map(({ category, count }, index) => (
+                      <div key={category} className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                        <div className="flex-1 flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{category}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 bg-blue-100 rounded-full w-24 overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{ 
+                                  width: `${(count / experts.length) * 100}%`
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">
+                              {count}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  {/* Expertise Tags */}
-                  <div className="mt-3">
-                    <div className="text-sm text-gray-500 mb-2">Expertise:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {getExpertiseArray(featuredExpert).slice(0, 3).map((item, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 text-xs rounded-full bg-blue-900/30 text-blue-400 border border-blue-800/50 shadow-inner"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Detail Button */}
-                  <button
-                    onClick={() => setSelectedExpert(featuredExpert)}
-                    className="mt-2 w-full px-3 py-2 bg-gradient-to-r from-blue-900 to-blue-800 text-blue-100 rounded-lg hover:from-blue-800 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-900/20 text-sm flex items-center justify-center gap-2"
-                  >
-                    <i className="fas fa-info-circle"></i>
-                    Details anzeigen
-                  </button>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Neu diese Woche</span>
+                  <span className="font-bold text-purple-400">12</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
@@ -1256,7 +1232,7 @@ const Page = () => {
             </div>
 
             {/* AI Company Stats */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">KI Unternehmen</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
@@ -1281,166 +1257,35 @@ const Page = () => {
               </div>
             </div>
 
-            {/* AI Enrichment Module -> Umbenannt zu Agent Research */}
+            {/* AI Enrichment Module */}
             <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-gray-100">Agent Research</h3>
-              
-              {reviewingFindings ? (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-gray-300 font-medium">Neue Findings überprüfen</h4>
-                    <button
-                      onClick={() => setReviewingFindings(false)}
-                      className="text-gray-400 hover:text-gray-300"
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    {agentFindings.filter(finding => !finding.approved && !finding.rejected).map(finding => (
-                      <div 
-                        key={finding.id}
-                        className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 space-y-2"
-                      >
-                        <div className="flex justify-between">
-                          <span className={`text-xs px-2 py-0.5 rounded ${
-                            finding.type === 'Publication' ? 'bg-blue-900/50 text-blue-400' :
-                            finding.type === 'Patent' ? 'bg-green-900/50 text-green-400' :
-                            'bg-purple-900/50 text-purple-400'
-                          }`}>
-                            {finding.type}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {finding.date}
-                          </span>
-                        </div>
-                        
-                        <div>
-                          <span className="text-blue-400 font-medium">{finding.expert}:</span>
-                          <p className="text-gray-300 text-sm">{finding.content}</p>
-                        </div>
-                        
-                        {finding.source && (
-                          <div className="text-xs">
-                            <a 
-                              href={finding.source} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-blue-500 hover:text-blue-400 flex items-center gap-1"
-                            >
-                              <i className="fas fa-external-link-alt"></i>
-                              Quelle
-                            </a>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-1">
-                            <i className="fas fa-chart-line text-gray-500"></i>
-                            <span className="text-xs text-gray-500">Relevanz: {Math.round(finding.relevance * 100)}%</span>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {/* Details Button hinzugefügt */}
-                            <button
-                              onClick={() => setSelectedFinding(finding)}
-                              className="px-2 py-1 bg-blue-700/70 text-blue-200 text-xs rounded hover:bg-blue-700 transition-colors"
-                            >
-                              <i className="fas fa-search mr-1"></i>
-                              Details
-                            </button>
-                            <button
-                              onClick={() => handleFindingAction(finding.id, true)}
-                              disabled={isLoading}
-                              className="px-2 py-1 bg-green-700/70 text-green-200 text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50"
-                            >
-                              <i className="fas fa-check mr-1"></i>
-                              Genehmigen
-                            </button>
-                            <button
-                              onClick={() => handleFindingAction(finding.id, false)}
-                              disabled={isLoading}
-                              className="px-2 py-1 bg-gray-700/70 text-gray-300 text-xs rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
-                            >
-                              <i className="fas fa-times mr-1"></i>
-                              Ablehnen
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {agentFindings.filter(finding => !finding.approved && !finding.rejected).length === 0 && (
-                      <div className="text-center py-6 text-gray-500">
-                        <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
-                        <p>Alle Findings wurden überprüft</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-between mt-4">
-                    <span className="text-sm text-gray-500">
-                      {agentFindings.filter(finding => !finding.approved && !finding.rejected).length} Findings übrig
-                    </span>
-                    
-                    <div className="flex gap-2">
-                      <button
-                        onClick={approveAllFindings}
-                        disabled={isLoading || agentFindings.filter(finding => !finding.approved && !finding.rejected).length === 0}
-                        className="px-3 py-1 bg-blue-700 text-white text-sm rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Alle genehmigen
-                      </button>
-                      <button
-                        onClick={() => setReviewingFindings(false)}
-                        className="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 transition-colors"
-                      >
-                        Schließen
-                      </button>
-                    </div>
-                  </div>
+              <h3 className="text-xl font-bold mb-4 text-gray-100">AI Enrichment</h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-400">AI Agent Status: Active</span>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-400">Agent Status: Active</span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <p>Aktuelle Forschungsergebnisse:</p>
-                    <ul className="list-disc list-inside mt-2">
-                      <li>Expertenprofile aktualisiert: 23</li>
-                      <li>Neue Verbindungen gefunden: 45</li>
-                      <li>Publikationen hinzugefügt: 12</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => setReviewingFindings(true)}
-                      disabled={isLoading || agentFindings.filter(f => !f.approved && !f.rejected).length === 0}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className="fas fa-search"></i>
-                      Findings überprüfen ({agentFindings.filter(f => !f.approved && !f.rejected).length})
-                    </button>
-                    
-                    <button
-                      onClick={handleStartResearch}
-                      disabled={isLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-robot'}`}></i>
-                      {isLoading ? 'Agent arbeitet...' : 'Research starten'}
-                    </button>
-                  </div>
+                <div className="text-sm text-gray-600">
+                  <p>Recent Enrichments:</p>
+                  <ul className="list-disc list-inside mt-2">
+                    <li>Expert profiles updated: 23</li>
+                    <li>New connections found: 45</li>
+                    <li>Publications added: 12</li>
+                  </ul>
                 </div>
-              )}
+                <button
+                  onClick={handleEnrichment}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-magic'}`}></i>
+                  {isLoading ? 'Wird angereichert...' : 'KI Anreicherung'}
+                </button>
+              </div>
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-lg">
+            <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg p-6 backdrop-blur-sm border border-gray-800/50 shadow-2xl transform transition-transform duration-500 hover:scale-105">
               <h3 className="text-xl font-bold mb-4 text-gray-100">Recent Activity</h3>
               <div className="space-y-3">
                 {recentActivity.map((activity, index) => (
@@ -1727,13 +1572,13 @@ const Page = () => {
                 </div>
               </div>
 
-              {/* Search Section */}
+              {/* Search Section - Apply dark mode styling here */}
               <div className="mb-6">
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="Suche nach Firmen, Technologien oder Standorten..."
-                    className="w-full p-4 pl-12 pr-4 rounded-lg border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-4 pl-12 pr-4 rounded-lg border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ki-firmen-search"
                     value={companySearchQuery}
                     onChange={(e) => {
                       setCompanySearchQuery(e.target.value);
@@ -2038,9 +1883,45 @@ const Page = () => {
     );
   }
 
+  // Handle dark mode toggle
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    if (typeof document !== 'undefined') {
+      if (!darkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+  };
+
+  // Apply dark mode on initial render
+  useEffect(() => {
+    if (typeof document !== 'undefined' && darkMode) {
+      document.body.classList.add('dark-mode');
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('dark-mode');
+      }
+    };
+  }, []);
+
+  // Handle login success
+  const handleLoginSuccess = () => {
+    console.log('Login successful');
+    setIsLoggedIn(true);
+  };
+
+  // If not logged in, show login screen
+  if (!isLoggedIn) {
+    return <Login users={users} onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Rest of the component for logged-in users
   return (
     <div className="font-cabin min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-100">
-      <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm sticky top-0 z-40">
+      <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -2090,18 +1971,21 @@ const Page = () => {
             </div>
 
             <div className="flex items-center">
-              <div className="dropdown-container relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
-                >
-                  <i className="fas fa-bell"></i>
-                  {notifications.length > 0 && (
-                    <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
-                      {notifications.length}
-                    </span>
-                  )}
-                </button>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
+              >
+                <i className="fas fa-bell"></i>
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
                 {/* Benachrichtigungen Dropdown mit höherem z-index */}
                 {showNotifications && (
