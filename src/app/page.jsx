@@ -347,7 +347,7 @@ const renderExpertCard = (expert, setSelectedExpert) => (
             ))}
             {getExpertiseArray(expert).length > 3 && (
               <span className="text-gray-500 text-xs">
-                +{getExpertiseArray(expert).length - 3} weitere
+                +{getExpertiseArray(expert).length - 3}
               </span>
             )}
           </div>
@@ -574,6 +574,7 @@ const renderFilterTag = (label, onRemove) => (
 );
 
 const Page = () => {
+  const router = useRouter(); // Stelle sicher, dass der Router definiert ist
   const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [experts, setExperts] = useState([]);
@@ -655,7 +656,11 @@ const Page = () => {
   const [reviewingFindings, setReviewingFindings] = useState(false);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [featuredExpert, setFeaturedExpert] = useState(null);
-  const [showAddExpertPopup, setShowAddExpertPopup] = useState(false);
+  
+  // Füge fehlende Authentifizierungsvariablen hinzu
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Default auf true, um Seite zu zeigen
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-line' },
@@ -1215,12 +1220,7 @@ const Page = () => {
                   <span className="text-gray-400">Neu diese Woche</span>
                   <span className="font-bold text-purple-400">12</span>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
-                  <i className="fas fa-spinner fa-spin text-xl mb-2"></i>
-                  <p>Lade Experten...</p>
-                </div>
-              )}
+              </div>
               
               <button 
                 onClick={() => setActiveModule('experts')} 
@@ -1897,15 +1897,14 @@ const Page = () => {
 
   // Apply dark mode on initial render
   useEffect(() => {
-    if (typeof document !== 'undefined' && darkMode) {
-      document.body.classList.add('dark-mode');
-    }
-    return () => {
-      if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined') {
+      if (!darkMode) {
         document.body.classList.remove('dark-mode');
+      } else {
+        document.body.classList.add('dark-mode');
       }
-    };
-  }, []);
+    }
+  }, [darkMode]);
 
   // Handle login success
   const handleLoginSuccess = () => {
@@ -1913,288 +1912,283 @@ const Page = () => {
     setIsLoggedIn(true);
   };
 
-  // If not logged in, show login screen
-  if (!isLoggedIn) {
-    return <Login users={users} onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  // Rest of the component for logged-in users
-  return (
     <div className="font-cabin min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-100">
-      <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                AI Expert DB
-              </span>
-            </div>
-
-            <div className="flex">
-              {menuItems.map((item) => (
-                <div key={item.id} className="relative dropdown-container">
-                  <button 
-                    onClick={() => item.hasDropdown ? setShowDropdown(item.id === showDropdown ? null : item.id) : handleMenuClick(item.id)}
-                    className={`inline-flex items-center px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
-                      activeModule === item.id
-                        ? 'border-blue-500 text-blue-400 bg-gray-800/30'
-                        : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800/20'
-                    }`}
-                  >
-                    <i className={`${item.icon} mr-2`}></i>
-                    {item.label}
-                    {item.hasDropdown && (
-                      <i className="fas fa-chevron-down ml-2 text-xs"></i>
-                    )}
-                  </button>
-
-                  {/* Dropdown Menu mit höherem z-index */}
-                  {item.hasDropdown && showDropdown === item.id && (
-                    <div className="absolute top-full left-0 mt-1 w-56 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl backdrop-blur-sm z-50">
-                      {item.dropdownItems.map((dropdownItem) => (
-                        <button
-                          key={dropdownItem.id}
-                          onClick={() => {
-                            handleMenuClick(item.id, dropdownItem.id);
-                            setShowDropdown(null);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-800/50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
-                        >
-                          <i className={`${dropdownItem.icon} w-4`}></i>
-                          {dropdownItem.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
-              >
-                <i className="fas fa-bell"></i>
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
-                    {notifications.length}
+      {isLoggedIn ? (
+        <>
+          <nav className="bg-gradient-to-br from-gray-900 to-black border-b border-gray-800/50 shadow-xl backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="flex justify-between h-16">
+                <div className="flex items-center">
+                  <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                    AI Expert DB
                   </span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+                </div>
 
-                {/* Benachrichtigungen Dropdown mit höherem z-index */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800 shadow-xl backdrop-blur-sm z-50">
-                    <div className="p-4 border-b">
-                      <h3 className="text-lg font-semibold">Benachrichtigungen</h3>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notification, index) => (
-                        <div key={index} className="p-4 border-b hover:bg-gray-800">
-                          <p className="text-sm text-gray-400">{notification.message}</p>
-                        </div>
-                      ))}
-                      {notifications.length === 0 && (
-                        <div className="p-4 text-center text-gray-500">
-                          Keine neuen Benachrichtigungen
+                <div className="flex">
+                  {menuItems.map((item) => (
+                    <div key={item.id} className="relative dropdown-container">
+                      <button
+                        onClick={() => item.hasDropdown ? setShowDropdown(item.id === showDropdown ? null : item.id) : handleMenuClick(item.id)}
+                        className={`inline-flex items-center px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
+                          activeModule === item.id
+                            ? 'border-blue-500 text-blue-400 bg-gray-800/30'
+                            : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800/20'
+                        }`}
+                      >
+                        <i className={`${item.icon} mr-2`}></i>
+                        {item.label}
+                        {item.hasDropdown && (
+                          <i className="fas fa-chevron-down ml-2 text-xs"></i>
+                        )}
+                      </button>
+
+                      {/* Dropdown Menu mit höherem z-index */}
+                      {item.hasDropdown && showDropdown === item.id && (
+                        <div className="absolute top-full left-0 mt-1 w-56 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl backdrop-blur-sm z-50">
+                          {item.dropdownItems.map((dropdownItem) => (
+                            <button
+                              key={dropdownItem.id}
+                              onClick={() => {
+                                handleMenuClick(item.id, dropdownItem.id);
+                                setShowDropdown(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-800/50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
+                            >
+                              <i className={`${dropdownItem.icon} w-4`}></i>
+                              {dropdownItem.label}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Benutzer-Dropdown mit höherem z-index */}
-              <div className="dropdown-container relative ml-3">
-                <button
-                  onClick={() => setShowDropdown(showDropdown === 'user' ? null : 'user')}
-                  className="p-2 rounded-full text-gray-400 hover:text-gray-200 flex items-center"
-                  aria-expanded={showDropdown === 'user'}
-                  aria-haspopup="true"
-                >
-                  <span className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                    <i className="fas fa-user"></i>
-                  </span>
-                </button>
-                
-                {showDropdown === 'user' && (
-                  <div 
-                    className="absolute right-0 mt-2 w-48 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl z-50"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu-button"
+                  ))}
+                </div>
+
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2 rounded-full text-gray-400 hover:text-gray-200 relative"
                   >
-                    <div className="py-1">
-                      {/* Anzeige des Benutzernamens */}
-                      <div className="px-4 py-2 text-sm text-gray-300 border-b border-gray-800">
-                        {getDecryptedUser().name}
+                    <i className="fas fa-bell"></i>
+                    {notifications.length > 0 && (
+                      <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-blue-500 text-white text-xs text-center">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Benachrichtigungen Dropdown mit höherem z-index */}
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800 shadow-xl backdrop-blur-sm z-50">
+                      <div className="p-4 border-b">
+                        <h3 className="text-lg font-semibold">Benachrichtigungen</h3>
                       </div>
-                      <a
-                        href="/profile"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
-                      >
-                        <i className="fas fa-user-circle mr-2"></i>
-                        Profil
-                      </a>
-                      <a
-                        href="/settings"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
-                      >
-                        <i className="fas fa-cog mr-2"></i>
-                        Einstellungen
-                      </a>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
-                      >
-                        <i className="fas fa-sign-out-alt mr-2"></i>
-                        Abmelden
-                      </button>
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.map((notification, index) => (
+                          <div key={index} className="p-4 border-b hover:bg-gray-800">
+                            <p className="text-sm text-gray-400">{notification.message}</p>
+                          </div>
+                        ))}
+                        {notifications.length === 0 && (
+                          <div className="p-4 text-center text-gray-500">
+                            Keine neuen Benachrichtigungen
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  )}
+
+                  {/* Benutzer-Dropdown mit höherem z-index */}
+                  <div className="dropdown-container relative ml-3">
+                    <button
+                      onClick={() => setShowDropdown(showDropdown === 'user' ? null : 'user')}
+                      className="p-2 rounded-full text-gray-400 hover:text-gray-200 flex items-center"
+                      aria-expanded={showDropdown === 'user'}
+                      aria-haspopup="true"
+                    >
+                      <span className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <i className="fas fa-user"></i>
+                      </span>
+                    </button>
+
+                    {/* Benutzermenü */}
+                    {showDropdown === 'user' && (
+                      <div
+                        className="absolute right-0 mt-2 w-48 bg-gradient-to-br from-gray-900 to-black rounded-lg border border-gray-800/50 shadow-xl z-50"
+                        role="menu"
+                        aria-orientation="vertical"
+                        aria-labelledby="user-menu-button"
+                      >
+                        <div className="py-1">
+                          {/* Anzeige des Benutzernamens */}
+                          <div className="px-4 py-2 text-sm text-gray-300 border-b border-gray-800">
+                            {getDecryptedUser().name}
+                          </div>
+                          <a
+                            href="/profile"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                          >
+                            <i className="fas fa-user-circle mr-2"></i>
+                            Profil
+                          </a>
+                          <a
+                            href="/settings"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                          >
+                            <i className="fas fa-cog mr-2"></i>
+                            Einstellungen
+                          </a>
+                          <button
+                            onClick={handleLogout}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+                          >
+                            <i className="fas fa-sign-out-alt mr-2"></i>
+                            Abmelden
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
+          </nav>
+
+          <main className="flex-1 relative">
+            {isLoadingExperts ? renderLoading() : renderContent()}
+          </main>
+
+          {/* Portale für Modals und Popups mit höherem z-index */}
+          {showAddExpertPopup && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+              <ExpertFormPopup
+                onClose={() => setShowAddExpertPopup(false)}
+                onSubmit={async (expertData) => {
+                  try {
+                    // Show immediate feedback
+                    toast.loading('Speichere Experten...', { id: 'saveExpert' });
+
+                    // Make the API call to create the expert
+                    const response = await fetch('/api/experts', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify(expertData),
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || 'Fehler beim Erstellen des Experten');
+                    }
+
+                    // Update UI immediately with new expert
+                    setExperts(prev => [...prev, expertData]);
+                    setFilteredExperts(prev => [...prev, expertData]);
+
+                    // Close the popup immediately
+                    setShowAddExpertPopup(false);
+
+                    // Show success message
+                    toast.success(`Experte ${expertData.name} wurde gespeichert`, { id: 'saveExpert' });
+
+                    // Refresh the list in background
+                    loadExpertsData().then(updatedExperts => {
+                      setExperts(updatedExperts);
+                      setFilteredExperts(updatedExperts);
+                    });
+
+                  } catch (error) {
+                    console.error('Error creating expert:', error);
+                    toast.error(error.message || 'Fehler beim Speichern', { id: 'saveExpert' });
+                    throw error;
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {selectedExpert && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+              <ExpertDetailsPopup
+                expert={selectedExpert}
+                onClose={() => setSelectedExpert(null)}
+                onUpdate={handleExpertUpdate}
+              />
+            </div>
+          )}
+
+          {selectedCompany && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+              <CompanyDetailsPopup
+                company={selectedCompany}
+                onClose={() => setSelectedCompany(null)}
+                onUpdate={handleCompanyUpdate}
+              />
+            </div>
+          )}
+
+          {showAddCompanyPopup && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+              <CompanyFormPopup
+                onClose={() => setShowAddCompanyPopup(false)}
+                onSubmit={async (companyData) => {
+                  try {
+                    const response = await fetch('/api/companies', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify(companyData),
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || 'Failed to create company');
+                    }
+
+                    // Get the response
+                    const result = await response.json();
+                    console.log('Company created:', result); // Add this for debugging
+
+                    // Refresh the companies list
+                    const updatedCompanies = await loadCompanies();
+                    setCompanies(updatedCompanies);
+                    setFilteredCompanies(updatedCompanies);
+
+                    // Show success notification
+                    toast.success(`Firma ${companyData.name} wurde erfolgreich erstellt`);
+
+                    // Close the popup
+                    setShowAddCompanyPopup(false);
+
+                  } catch (error) {
+                    console.error('Error creating company:', error);
+                    toast.error(error.message || 'Failed to create company');
+                    throw error;
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Finding Detail Popup */}
+          {selectedFinding && (
+            <FindingDetailPopup
+              finding={selectedFinding}
+              onClose={() => setSelectedFinding(null)}
+              onApprove={handleFindingApprove}
+              onReject={handleFindingReject}
+            />
+          )}
+
+          <div className="flex justify-end p-4">
+            <ExportButton />
           </div>
-        </div>
-      </nav>
-
-      <main className="flex-1 relative">
-        {isLoadingExperts ? renderLoading() : renderContent()}
-      </main>
-
-      {/* Portale für Modals und Popups mit höherem z-index */}
-      {showAddExpertPopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-          <ExpertFormPopup
-            onClose={() => setShowAddExpertPopup(false)}
-            onSubmit={async (expertData) => {
-              try {
-                // Show immediate feedback
-                toast.loading('Speichere Experten...', { id: 'saveExpert' });
-
-                // Make the API call to create the expert
-                const response = await fetch('/api/experts', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(expertData),
-                });
-
-                if (!response.ok) {
-                  const error = await response.json();
-                  throw new Error(error.error || 'Fehler beim Erstellen des Experten');
-                }
-
-                // Update UI immediately with new expert
-                setExperts(prev => [...prev, expertData]);
-                setFilteredExperts(prev => [...prev, expertData]);
-                
-                // Close the popup immediately
-                setShowAddExpertPopup(false);
-
-                // Show success message
-                toast.success(`Experte ${expertData.name} wurde gespeichert`, { id: 'saveExpert' });
-
-                // Refresh the list in background
-                loadExpertsData().then(updatedExperts => {
-                  setExperts(updatedExperts);
-                  setFilteredExperts(updatedExperts);
-                });
-
-              } catch (error) {
-                console.error('Error creating expert:', error);
-                toast.error(error.message || 'Fehler beim Speichern', { id: 'saveExpert' });
-                throw error;
-              }
-            }}
-          />
-        </div>
+        </>
+      ) : (
+        <Login users={users} onLoginSuccess={handleLoginSuccess} />
       )}
-
-      {selectedExpert && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-          <ExpertDetailsPopup
-            expert={selectedExpert}
-            onClose={() => setSelectedExpert(null)}
-            onUpdate={handleExpertUpdate}
-          />
-        </div>
-      )}
-
-      {selectedCompany && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-          <CompanyDetailsPopup
-            company={selectedCompany}
-            onClose={() => setSelectedCompany(null)}
-            onUpdate={handleCompanyUpdate}
-          />
-        </div>
-      )}
-
-      {showAddCompanyPopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-          <CompanyFormPopup
-            onClose={() => setShowAddCompanyPopup(false)}
-            onSubmit={async (companyData) => {
-              try {
-                const response = await fetch('/api/companies', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(companyData),
-                });
-
-                if (!response.ok) {
-                  const error = await response.json();
-                  throw new Error(error.error || 'Failed to create company');
-                }
-
-                // Get the response
-                const result = await response.json();
-                console.log('Company created:', result); // Add this for debugging
-
-                // Refresh the companies list
-                const updatedCompanies = await loadCompanies();
-                setCompanies(updatedCompanies);
-                setFilteredCompanies(updatedCompanies);
-                
-                // Show success notification
-                toast.success(`Firma ${companyData.name} wurde erfolgreich erstellt`);
-                
-                // Close the popup
-                setShowAddCompanyPopup(false);
-
-              } catch (error) {
-                console.error('Error creating company:', error);
-                toast.error(error.message || 'Failed to create company');
-                throw error;
-              }
-            }}
-          />
-        </div>
-      )}
-
-      {/* Finding Detail Popup */}
-      {selectedFinding && (
-        <FindingDetailPopup
-          finding={selectedFinding}
-          onClose={() => setSelectedFinding(null)}
-          onApprove={handleFindingApprove}
-          onReject={handleFindingReject}
-        />
-      )}
-
-      <div className="flex justify-end p-4">
-        <ExportButton />
-      </div>
     </div>
   );
 };

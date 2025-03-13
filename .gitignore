@@ -41,3 +41,4 @@ public/uploads/*
 
 # environment variables
 .env
+.qodo
